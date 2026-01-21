@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Missing Person Poster: {{ case.name }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Oswald:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-oswald { font-family: 'Oswald', sans-serif; }
+        #poster { aspect-ratio: 8.5 / 11; }
+        @media print { .no-print { display: none; } body { background-color: white; } }
+    </style>
+</head>
+<body class="bg-slate-900 flex flex-col items-center justify-center min-h-screen p-4 sm:p-8">
+
+    <div id="poster" class="w-full max-w-2xl bg-white shadow-2xl p-6 flex flex-col text-slate-900">
+        <header class="text-center border-b-8 border-red-600 pb-4">
+            <h1 class="font-oswald text-8xl sm:text-9xl font-bold text-red-600 tracking-wider">MISSING</h1>
+        </header>
+
+        <main class="flex-grow grid grid-cols-2 gap-6 mt-6 items-start">
+            <div class="flex flex-col">
+                <img src="{{ case.photoURL }}" alt="{{ case.name }}" class="w-full border-4 border-slate-900 object-cover">
+                <h2 class="text-5xl sm:text-6xl font-black mt-4 text-center bg-slate-900 text-white py-2">{{ case.name }}</h2>
+            </div>
+
+            <div class="flex flex-col space-y-4 text-lg">
+                <div><strong class="block text-slate-500 text-sm">AGE</strong><span class="text-2xl font-bold">{{ case.age }}</span></div>
+                <div><strong class="block text-slate-500 text-sm">GENDER</strong><span class="text-2xl font-bold">{{ case.gender }}</span></div>
+                <div><strong class="block text-slate-500 text-sm">LAST SEEN</strong><span class="text-2xl font-bold">{{ case.lastSeen }}</span></div>
+                <div><strong class="block text-slate-500 text-sm">MISSING SINCE</strong><span class="text-2xl font-bold">{{ case.missingSince }}</span></div>
+                <div><strong class="block text-slate-500 text-sm">DETAILS</strong><p class="font-semibold">{{ case.distinguishingFeatures }}</p></div>
+
+                {% if case.cashReward and case.cashReward > 0 %}
+                <div class="mt-4 p-3 bg-green-100 border-2 border-green-600 text-center">
+                    <p class="text-xl font-bold text-green-800">CASH REWARD</p>
+                    <p class="text-4xl font-bold text-green-800">₹{{ "{:,.0f}".format(case.cashReward) }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </main>
+
+        <footer class="mt-auto border-t-8 border-red-600 pt-4 grid grid-cols-3 items-center gap-4 text-center">
+            <div class="col-span-2">
+                <p class="text-xl font-bold">IF YOU HAVE ANY INFORMATION, PLEASE CONTACT:</p>
+                <p class="text-5xl font-bold mt-1">{{ case.contact }}</p>
+            </div>
+            <div class="flex flex-col items-center justify-center">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data={{ network_url|urlencode }}" alt="QR Code">
+                <p class="text-xs font-semibold mt-1">Scan for Digital Case File</p>
+            </div>
+        </footer>
+    </div>
+
+    <div class="no-print mt-6 flex space-x-4">
+        <button id="downloadBtn" class="bg-blue-600 text-white px-6 py-2 rounded-md font-bold hover:bg-blue-700">Download Poster</button>
+        <button onclick="window.print()" class="bg-slate-600 text-white px-6 py-2 rounded-md font-bold hover:bg-slate-700">Print Poster</button>
+    </div>
+
+    <script>
+        document.getElementById('downloadBtn').addEventListener('click', function() {
+            const posterElement = document.getElementById('poster');
+            html2canvas(posterElement, { scale: 3 }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'missing-poster-{{ case.name }}.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+        });
+    </script>
+</body>
+</html>

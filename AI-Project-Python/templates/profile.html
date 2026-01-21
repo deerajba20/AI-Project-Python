@@ -1,0 +1,200 @@
+{% extends "layout.html" %}
+{% block title %}My Profile{% endblock %}
+{% block content %}
+<main class="space-y-8">
+    <div>
+        <a href="{{ url_for('main_menu') }}" class="text-sm hover:underline">&larr; Back to Dashboard</a>
+        <h1 class="text-3xl mt-2">My Profile</h1>
+        <p>Manage all the cases you have reported.</p>
+    </div>
+
+    <!-- My Cases Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {% if cases %}
+            {% for case in cases %}
+            <div class="case-card flex flex-col" style="border: 1px solid var(--border-color); border-radius: 0.5rem; overflow: hidden; background: rgba(10, 15, 24, 0.75);">
+                <a href="{{ url_for('case_detail', case_id=case.id) }}" class="block group relative">
+                    <img src="{{ case.photoURL }}" alt="{{ case.name }}" class="w-full h-56 object-cover transition-transform duration-300 group-hover:scale-105">
+                     <div class="absolute inset-0 bg-black/20"></div>
+                </a>
+                <div class="p-4 flex-grow flex flex-col">
+                    <h3 class="text-lg font-bold" style="color: var(--primary-glow-color);">{{ case.name }}</h3>
+                    <p class="text-sm text-gray-400">Status:
+                        <span class="font-semibold {{ 'text-red-400' if case.status == 'active' else 'text-green-400' }}">
+                            {{ case.status|capitalize }}
+                        </span>
+                    </p>
+                </div>
+                <div class="p-3 flex justify-end space-x-3" style="background-color: rgba(0,0,0,0.2);">
+                    <button onclick="openEditModal('{{ case.id }}')" class="text-sm font-medium hover:underline">Edit</button>
+                    <button onclick="confirmDelete('{{ case.id }}')" class="text-sm font-medium hover:underline" style="color: var(--danger-color);">Delete</button>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-span-full text-center py-16 rounded-lg" style="border: 1px dashed var(--border-color); background: rgba(10, 15, 24, 0.75);">
+                <svg class="mx-auto h-12 w-12" style="color: var(--primary-glow-color);" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-white">You have not reported any cases.</h3>
+                <p class="mt-1 text-sm text-gray-500">Go to "Manage My Cases" on the dashboard to add one.</p>
+            </div>
+        {% endif %}
+    </div>
+</main>
+
+<!-- Themed Modals (Copied from manage_cases.html for consistency) -->
+{% macro themed_modal(id, title_text) %}
+<div id="{{ id }}" class="fixed z-10 inset-0 overflow-y-auto hidden">
+    <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" aria-hidden="true"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+        <div class="inline-block align-bottom rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full main-container p-0">
+            <form id="{{ id }}Form" onsubmit="return false;">
+                <div class="px-6 py-4">
+                    <h3 class="text-lg font-medium mb-4">{{ title_text }}</h3>
+                    <div class="modal-content-wrapper">
+                        {{ caller() }}
+                    </div>
+                </div>
+                <div class="px-6 py-4 flex flex-row-reverse" style="background-color: rgba(0,0,0,0.2);">
+                     <button id="{{ id }}SubmitBtn" type="submit" class="btn w-full sm:w-auto sm:ml-3">Submit</button>
+                    <button type="button" onclick="closeModal('{{ id }}')" class="btn w-full sm:w-auto mt-3 sm:mt-0" style="background: transparent; border-color: var(--secondary-text-color); color: var(--secondary-text-color);">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+<!-- Edit Case Modal -->
+{% call themed_modal('editCaseModal', 'Edit Case Details') %}
+<input type="hidden" id="editCaseId" name="caseId">
+<div class="space-y-4">
+    <p class="text-sm text-gray-500">Note: The photo cannot be changed after creation. Please submit a new case if the photo needs updating.</p>
+    <div class="grid grid-cols-2 gap-4">
+        <div><label class="block text-sm font-medium text-gray-400">Name</label><input type="text" id="editName" name="name" required class="form-input mt-1 block w-full"></div>
+        <div><label class="block text-sm font-medium text-gray-400">Age</label><input type="number" id="editAge" name="age" required class="form-input mt-1 block w-full"></div>
+        <div><label class="block text-sm font-medium text-gray-400">Gender</label><select id="editGender" name="gender" class="form-input mt-1 block w-full"><option>Male</option><option>Female</option><option>Other</option></select></div>
+        <div><label class="block text-sm font-medium text-gray-400">Emergency Contact</label><input type="text" id="editContact" name="contact" required class="form-input mt-1 block w-full"></div>
+    </div>
+    <div><label class="block text-sm font-medium text-gray-400">Last Seen Location</label><input type="text" id="editLastSeen" name="lastSeen" required class="form-input mt-1 block w-full"></div>
+    <div><label class="block text-sm font-medium text-gray-400">Missing Since</label><input type="date" id="editMissingSince" name="missingSince" required class="form-input mt-1 block w-full"></div>
+    <div><label class="block text-sm font-medium text-gray-400">Distinguishing Features</label><textarea id="editDistinguishingFeatures" name="distinguishingFeatures" required class="form-input mt-1 block w-full"></textarea></div>
+    <div><label class="block text-sm font-medium text-gray-400">Cash Reward (Optional)</label><input type="number" id="editCashReward" name="cashReward" class="form-input mt-1 block w-full"></div>
+</div>
+{% endcall %}
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteConfirmModal" class="fixed z-20 inset-0 overflow-y-auto hidden">
+    <div class="flex items-center justify-center min-h-screen">
+        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" aria-hidden="true"></div>
+        <div class="inline-block main-container max-w-sm w-full p-0 rounded-lg overflow-hidden">
+             <div class="p-6">
+                <div class="sm:flex sm:items-start">
+                    <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full sm:mx-0 sm:h-10 sm:w-10" style="background-color: rgba(255, 77, 77, 0.1);">
+                        <svg class="h-6 w-6" style="color: var(--danger-color);" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                    </div>
+                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                        <h3 class="text-lg leading-6 font-medium text-white">Delete Case</h3>
+                        <p class="text-sm mt-2">Are you sure? This will permanently remove the case and all associated sighting data. This action is irreversible.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="px-6 py-4 flex flex-row-reverse" style="background-color: rgba(0,0,0,0.2);">
+                <button id="confirmDeleteBtn" type="button" class="btn w-full sm:w-auto sm:ml-3" style="border-color: var(--danger-color); color: var(--danger-color);">Confirm Delete</button>
+                <button type="button" onclick="closeModal('deleteConfirmModal')" class="btn w-full sm:w-auto mt-3 sm:mt-0" style="background: transparent; border-color: var(--secondary-text-color); color: var(--secondary-text-color);">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+let caseToDeleteId = null;
+
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.add('hidden');
+}
+
+async function openEditModal(caseId) {
+    try {
+        const response = await fetch(`/api/get_case/${caseId}`);
+        const caseData = await response.json();
+        if (!response.ok) {
+            showAlert('Could not load case data.', false);
+            return;
+        }
+
+        const form = document.getElementById('editCaseModalForm');
+        form.reset();
+
+        form.querySelector('#editCaseId').value = caseId;
+        form.querySelector('#editName').value = caseData.name;
+        form.querySelector('#editAge').value = caseData.age;
+        form.querySelector('#editGender').value = caseData.gender;
+        form.querySelector('#editLastSeen').value = caseData.lastSeen;
+        form.querySelector('#editContact').value = caseData.contact;
+        form.querySelector('#editMissingSince').value = caseData.missingSince;
+        form.querySelector('#editDistinguishingFeatures').value = caseData.distinguishingFeatures;
+        form.querySelector('#editCashReward').value = caseData.cashReward || '';
+
+        document.getElementById('editCaseModal').classList.remove('hidden');
+    } catch (error) {
+        showAlert('An error occurred while fetching case data.', false);
+    }
+}
+
+document.getElementById('editCaseModalForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const caseId = document.getElementById('editCaseId').value;
+    const formData = new FormData(this);
+    const submitBtn = document.getElementById('editCaseModalSubmitBtn');
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Saving...';
+
+    try {
+        const response = await fetch(`/api/update_case/${caseId}`, { method: 'POST', body: formData });
+        const result = await response.json();
+        if (response.ok) {
+            showAlert(result.message, true);
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            showAlert(result.message, false);
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+        }
+    } catch (error) {
+        showAlert('An error occurred.', false);
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+    }
+});
+
+function confirmDelete(caseId) {
+    caseToDeleteId = caseId;
+    document.getElementById('deleteConfirmModal').classList.remove('hidden');
+}
+
+document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
+    if (!caseToDeleteId) return;
+
+    try {
+        const response = await fetch(`/api/delete_case/${caseToDeleteId}`, { method: 'POST' });
+        const result = await response.json();
+        showAlert(result.message, response.ok);
+        if (response.ok) {
+            setTimeout(() => window.location.reload(), 1000);
+        }
+    } catch (error) {
+        showAlert('An error occurred.', false);
+    } finally {
+        caseToDeleteId = null;
+        closeModal('deleteConfirmModal');
+    }
+});
+</script>
+{% endblock %}

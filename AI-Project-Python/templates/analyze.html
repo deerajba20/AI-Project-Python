@@ -1,0 +1,451 @@
+{% extends "layout.html" %}
+{% block title %}Analyze Sighting{% endblock %}
+{% block content %}
+<div class="card p-6 md:p-8 space-y-6" id="main-analysis-container">
+    <div class="flex justify-between items-center">
+        <h2 class="text-3xl font-bold font-orbitron text-white">Analyze Sighting</h2>
+        <a href="{{ url_for('main_menu') }}" class="text-sm text-slate-400 hover:text-white transition-colors">&larr; Back to Dashboard</a>
+    </div>
+
+    <div class="flex border-b border-[var(--border-color)]">
+        <button id="photoTabBtn" class="py-2 px-4 font-semibold border-b-2 border-[var(--glow-cyan)] text-white transition-all">Photo Analysis</button>
+        <button id="videoTabBtn" class="py-2 px-4 font-semibold text-slate-400 hover:text-white transition-all border-b-2 border-transparent">Video & Live Analysis</button>
+    </div>
+
+    <div id="photoAnalysisSection" class="space-y-6">
+        <div id="photoUploadArea" class="border-2 border-dashed border-[var(--border-color)] rounded-lg p-8 text-center cursor-pointer hover:bg-cyan-500/5 hover:border-[var(--glow-cyan)] transition-colors">
+            <label for="imageUpload" class="cursor-pointer flex flex-col items-center justify-center">
+                <svg class="w-12 h-12 mx-auto text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                <h3 class="mt-4 text-lg font-semibold text-white">Click to Upload Photo</h3>
+                <p class="text-sm text-slate-400">The system will analyze it for potential matches.</p>
+            </label>
+            <input type="file" id="imageUpload" accept="image/*" class="hidden"/>
+        </div>
+        <div id="photoResultsContainer" class="hidden space-y-6">
+             <h3 class="text-2xl font-orbitron text-white">Analysis Results</h3>
+             <div id="photoResults" class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start"></div>
+        </div>
+    </div>
+
+    <div id="videoAnalysisSection" class="hidden space-y-6">
+        <div id="videoModeSelection" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div id="videoUploadChoice" class="card p-6 text-center cursor-pointer hover:bg-cyan-500/10 hover:border-[var(--glow-cyan)] transition-colors">
+                <svg class="w-12 h-12 mx-auto text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.55a1 1 0 01.55.89V14.1a1 1 0 01-.55.89L15 18M5 10v4a1 1 0 001 1h4a1 1 0 001-1v-1a1 1 0 00-1-1H7a1 1 0 00-1-1H6a1 1 0 00-1 1z"></path></svg>
+                <h3 class="mt-4 text-lg font-semibold text-white">Upload Video File</h3>
+                <p class="text-sm text-slate-400">Analyze a pre-recorded video for matches.</p>
+            </div>
+            <div id="liveCameraChoice" class="card p-6 text-center cursor-pointer hover:bg-cyan-500/10 hover:border-[var(--glow-cyan)] transition-colors">
+                <svg class="w-12 h-12 mx-auto text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                <h3 class="mt-4 text-lg font-semibold text-white">Use Live Camera</h3>
+                <p class="text-sm text-slate-400">Detect faces in real-time from your webcam.</p>
+            </div>
+        </div>
+
+        <div id="videoUploadFlow" class="hidden space-y-6">
+            <input type="file" id="videoUpload" accept="video/*" class="hidden"/>
+            <div id="videoResultsContainer" class="space-y-6">
+                <h3 class="text-2xl font-orbitron text-white">Video Analysis Results</h3>
+                <div id="videoResults" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div id="videoPlayerContainer" class="md:col-span-2 hidden rounded-lg overflow-hidden border border-[var(--border-color)]">
+                        <video id="videoPlayer" class="w-full bg-black" controls></video>
+                    </div>
+                    <div id="videoMatchesContainer" class="space-y-4">
+                        <p class="text-center text-slate-400">Uploading and analyzing video...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="liveCameraFlow" class="hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2 space-y-4">
+                    <div class="relative w-full aspect-video bg-black rounded-lg border border-[var(--border-color)] overflow-hidden">
+                        <video id="liveVideo" class="w-full h-full" autoplay playsinline muted></video>
+                        <canvas id="liveCanvas" class="absolute top-0 left-0 w-full h-full"></canvas>
+                        <p id="cameraMessage" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-slate-300">Camera is off</p>
+                    </div>
+                    <div class="flex justify-center gap-4">
+                        <button id="startCameraBtn" class="btn-secondary">Start Camera</button>
+                        <button id="stopCameraBtn" class="btn-secondary" disabled>Stop Camera</button>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    <h3 class="text-2xl font-orbitron text-white">Live Detections</h3>
+                    <div id="liveResults" class="card p-4 min-h-[200px] max-h-[40vh] overflow-y-auto">
+                        <p class="text-slate-400">Waiting for camera...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // --- State variables ---
+    let currentLocation = { lat: null, lon: null, address: "Location not provided" };
+    let liveStream = null;
+    let analysisInterval = null;
+
+    // --- DOM Elements ---
+    const mainContainer = document.getElementById('main-analysis-container');
+    const photoTabBtn = document.getElementById('photoTabBtn');
+    const videoTabBtn = document.getElementById('videoTabBtn');
+    const photoAnalysisSection = document.getElementById('photoAnalysisSection');
+    const videoAnalysisSection = document.getElementById('videoAnalysisSection');
+    const imageUploadInput = document.getElementById('imageUpload');
+    const photoResultsContainer = document.getElementById('photoResultsContainer');
+    const photoResultsDiv = document.getElementById('photoResults');
+    const videoModeSelection = document.getElementById('videoModeSelection');
+    const videoUploadChoice = document.getElementById('videoUploadChoice');
+    const liveCameraChoice = document.getElementById('liveCameraChoice');
+    const videoUploadFlow = document.getElementById('videoUploadFlow');
+    const videoUploadInput = document.getElementById('videoUpload');
+    const videoPlayerContainer = document.getElementById('videoPlayerContainer');
+    const videoPlayer = document.getElementById('videoPlayer');
+    const videoMatchesContainer = document.getElementById('videoMatchesContainer');
+    const liveCameraFlow = document.getElementById('liveCameraFlow');
+    const startCameraBtn = document.getElementById('startCameraBtn');
+    const stopCameraBtn = document.getElementById('stopCameraBtn');
+    const liveVideo = document.getElementById('liveVideo');
+    const liveCanvas = document.getElementById('liveCanvas');
+    const liveResults = document.getElementById('liveResults');
+    const cameraMessage = document.getElementById('cameraMessage');
+
+    // --- Utility: Get Location ---
+    function getLocation() {
+        return new Promise((resolve) => {
+            if (!navigator.geolocation) {
+                showAlert('Geolocation is not supported by your browser.', false);
+                return resolve(currentLocation);
+            }
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    const { latitude, longitude } = position.coords;
+                    let address = "Address not available";
+                    try {
+                         const addressResponse = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+                         const addressData = await addressResponse.json();
+                         address = addressData.display_name || address;
+                    } catch(e) { console.warn("Address lookup failed"); }
+                    currentLocation = { lat: latitude, lon: longitude, address: address };
+                    resolve(currentLocation);
+                },
+                () => {
+                    showAlert('Could not get location. Proceeding without it.', false);
+                    resolve(currentLocation);
+                }
+            );
+        });
+    }
+
+    // --- Tab Switching Logic ---
+    function switchTab(activeTab) {
+        stopCamera();
+        videoModeSelection.classList.remove('hidden');
+        liveCameraFlow.classList.add('hidden');
+        videoUploadFlow.classList.add('hidden');
+
+        const tabs = {
+            photo: { btn: photoTabBtn, section: photoAnalysisSection },
+            video: { btn: videoTabBtn, section: videoAnalysisSection }
+        };
+        Object.values(tabs).forEach(tab => {
+            tab.section.classList.add('hidden');
+            tab.btn.classList.remove('border-[var(--glow-cyan)]', 'text-white');
+            tab.btn.classList.add('text-slate-400', 'border-transparent');
+        });
+        tabs[activeTab].section.classList.remove('hidden');
+        tabs[activeTab].btn.classList.add('border-[var(--glow-cyan)]', 'text-white');
+    }
+    photoTabBtn.addEventListener('click', () => switchTab('photo'));
+    videoTabBtn.addEventListener('click', () => switchTab('video'));
+
+    // --- Mode Choice Logic ---
+    videoUploadChoice.addEventListener('click', () => {
+        videoModeSelection.classList.add('hidden');
+        videoUploadFlow.classList.remove('hidden');
+        videoUploadInput.click();
+    });
+    liveCameraChoice.addEventListener('click', () => {
+        videoModeSelection.classList.add('hidden');
+        liveCameraFlow.classList.remove('hidden');
+    });
+
+    // --- Photo Analysis ---
+    imageUploadInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        photoResultsContainer.classList.remove('hidden');
+        photoResultsDiv.innerHTML = `<div class="col-span-full text-center p-8"><p class="text-slate-300">Getting location and analyzing photo...</p></div>`;
+        const location = await getLocation();
+        await analyzePhoto(file, location);
+    });
+
+    async function analyzePhoto(file, location) {
+        const formData = new FormData();
+        formData.append('photo', file);
+        formData.append('lat', location.lat);
+        formData.append('lon', location.lon);
+        formData.append('address', location.address);
+
+        try {
+            const response = await fetch('/api/analyze_photo', { method: 'POST', body: formData });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message);
+            displayPhotoResults(data);
+        } catch (error) {
+            showAlert(error.message || 'An error occurred.', false);
+            photoResultsDiv.innerHTML = `<div class="col-span-full card bg-red-500/10 text-center p-8"><p class="text-red-400">${error.message}</p></div>`;
+        }
+    }
+
+    // In analyze.html, REPLACE the displayPhotoResults function with this one.
+
+function displayPhotoResults(data) {
+    photoResultsDiv.innerHTML = '';
+    const imageCol = document.createElement('div');
+    const img = new Image();
+    img.src = data.image_data;
+    img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = data.results.image_width;
+        canvas.height = data.results.image_height;
+        canvas.className = "w-full h-auto rounded-lg border border-[var(--border-color)]";
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        data.results.match_results.forEach(res => {
+            const loc = res.location;
+            ctx.strokeStyle = res.name === "Unknown" ? "#FFCC00" : "#00E5FF";
+            ctx.lineWidth = 3;
+            ctx.strokeRect(loc.left, loc.top, loc.right - loc.left, loc.bottom - loc.top);
+            ctx.fillStyle = ctx.strokeStyle;
+            ctx.font = "bold 16px Inter";
+            ctx.fillText(res.name, loc.left, loc.top > 20 ? loc.top - 8 : loc.bottom + 20);
+        });
+        imageCol.appendChild(canvas);
+    };
+    photoResultsDiv.appendChild(imageCol);
+
+    const infoCol = document.createElement('div');
+    infoCol.className = "space-y-4";
+
+    if (data.matched_profiles.length > 0) {
+        // --- MODIFIED: Added confirmation message ---
+        infoCol.innerHTML += `
+            <div class="card p-4 bg-cyan-500/10">
+                <h4 class="font-bold text-lg text-cyan-400">Match Found!</h4>
+                <p class="text-slate-300">Case owners have been notified automatically.</p>
+            </div>
+        `;
+
+        // --- MODIFIED: Removed the button from the profile card ---
+        data.matched_profiles.forEach(profile => {
+            infoCol.innerHTML += `
+                <div class="card p-4 space-y-3">
+                    <p class="font-bold text-lg text-white">${profile.name}</p>
+                    <p class="text-sm text-slate-400">Age: ${profile.age} | Last Seen: ${profile.lastSeen}</p>
+                    <a href="/case/${profile.id}" class="text-sm font-semibold text-cyan-400 hover:underline">View Full Profile &rarr;</a>
+                </div>
+            `;
+        });
+    } else {
+         infoCol.innerHTML = `<div class="card p-4 bg-yellow-500/10"><h4 class="font-bold text-lg text-yellow-400">No Match Found</h4><p class="text-slate-300">No matches were found in the active cases database.</p></div>`;
+    }
+    photoResultsDiv.appendChild(infoCol);
+}
+
+
+    // --- Video Analysis ---
+    videoUploadInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) {
+            videoModeSelection.classList.remove('hidden');
+            videoUploadFlow.classList.add('hidden');
+            return;
+        }
+        videoMatchesContainer.innerHTML = `<div class="text-center p-4"><p class="text-slate-300">Getting location and analyzing video...</p></div>`;
+        videoPlayerContainer.classList.remove('hidden');
+        videoPlayer.src = URL.createObjectURL(file);
+        const location = await getLocation();
+        await analyzeVideo(file, location);
+    });
+
+    async function analyzeVideo(file, location) {
+        const formData = new FormData();
+        formData.append('video', file);
+        formData.append('lat', location.lat);
+        formData.append('lon', location.lon);
+        formData.append('address', location.address);
+        try {
+            const response = await fetch('/api/analyze_video', { method: 'POST', body: formData });
+            const result = await response.json();
+            if (!response.ok || !result.success) throw new Error(result.message);
+            displayVideoResults(result.results);
+        } catch (error) {
+            showAlert(error.message || 'An error occurred.', false);
+            videoMatchesContainer.innerHTML = `<div class="card p-4 bg-red-500/10 text-center"><p class="text-red-400">${error.message}</p></div>`;
+        }
+    }
+
+    function displayVideoResults(results) {
+        videoMatchesContainer.innerHTML = '';
+        if (results.length === 0) {
+            videoMatchesContainer.innerHTML = `<div class="card p-4"><h3 class="font-semibold text-white">Analysis Complete</h3><p class="text-slate-400">No matches found in the video.</p></div>`;
+            return;
+        }
+        let resultsHtml = '<h3 class="font-semibold text-white text-lg mb-2">Matches Found</h3>';
+        results.forEach(match => {
+            const profile = match.profile;
+            resultsHtml += `
+                <div class="card p-4 space-y-3">
+                    <p class="font-bold text-lg text-white">${profile.name}</p>
+                    <p class="text-sm text-slate-400">Appearances at:</p>
+                    <div class="flex flex-wrap gap-2">${match.timestamps.map(ts => `<button onclick="jumpToTime(${ts})" class="text-xs bg-cyan-500/10 text-cyan-300 px-2 py-1 rounded-full hover:bg-cyan-500/30">${Math.floor(ts/60)}:${Math.floor(ts%60).toString().padStart(2, '0')}</button>`).join('')}</div>
+                    <button class="btn-primary w-full notify-btn" data-case-id="${profile.id}" data-snapshot='${match.snapshot}'>
+                        Notify Case Owner
+                    </button>
+                </div>
+            `;
+        });
+        videoMatchesContainer.innerHTML = resultsHtml;
+    }
+
+    function jumpToTime(time) {
+        videoPlayer.currentTime = time;
+        videoPlayer.play();
+    }
+
+    // --- Live Camera ---
+    startCameraBtn.addEventListener('click', async () => {
+        try {
+            liveStream = await navigator.mediaDevices.getUserMedia({ video: true });
+            liveVideo.srcObject = liveStream;
+            startCameraBtn.disabled = true; stopCameraBtn.disabled = false;
+            cameraMessage.classList.add('hidden');
+            liveResults.innerHTML = '<p class="text-slate-400">Camera active, getting location...</p>';
+            await getLocation(); // Get location once when camera starts
+            liveResults.innerHTML = '<p class="text-slate-400">Analyzing...</p>';
+
+            liveVideo.onloadedmetadata = () => {
+                liveCanvas.width = liveVideo.videoWidth;
+                liveCanvas.height = liveVideo.videoHeight;
+                analysisInterval = setInterval(analyzeLiveFrame, 1500); // Analyze every 1.5 seconds
+            };
+        } catch (error) {
+            showAlert('Could not access the camera. Please check permissions.', false);
+            liveResults.innerHTML = '<p class="text-red-400">Camera access denied.</p>';
+        }
+    });
+    stopCameraBtn.addEventListener('click', stopCamera);
+    function stopCamera() {
+        if (liveStream) liveStream.getTracks().forEach(track => track.stop());
+        clearInterval(analysisInterval); analysisInterval = null;
+        liveVideo.srcObject = null;
+        startCameraBtn.disabled = false; stopCameraBtn.disabled = true;
+        cameraMessage.classList.remove('hidden');
+        liveResults.innerHTML = '<p class="text-slate-400">Camera is off.</p>';
+        liveCanvas.getContext('2d').clearRect(0, 0, liveCanvas.width, liveCanvas.height);
+    }
+   // In analyze.html, REPLACE the analyzeLiveFrame function with this one.
+
+async function analyzeLiveFrame() {
+    if (liveVideo.paused || liveVideo.ended || !liveStream) return;
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = 640; // Analyze smaller frame for performance
+    tempCanvas.height = tempCanvas.width * (liveVideo.videoHeight / liveVideo.videoWidth);
+    tempCanvas.getContext('2d').drawImage(liveVideo, 0, 0, tempCanvas.width, tempCanvas.height);
+
+    tempCanvas.toBlob(async (blob) => {
+        if (!blob) return;
+        const formData = new FormData();
+        formData.append('photo', blob, 'liveframe.jpg');
+        formData.append('lat', currentLocation.lat);
+        formData.append('lon', currentLocation.lon);
+        formData.append('address', currentLocation.address);
+
+        // --- THIS IS THE NEW LINE ---
+        formData.append('source', 'live'); // Tell the backend this is from the live camera
+
+        try {
+            const response = await fetch('/api/analyze_photo', { method: 'POST', body: formData });
+            const data = await response.json();
+            if (response.ok) drawLiveResults(data);
+        } catch (error) { console.error("Live analysis error:", error); }
+    }, 'image/jpeg');
+}
+
+    function drawLiveResults(data) {
+        const ctx = liveCanvas.getContext('2d');
+        ctx.clearRect(0, 0, liveCanvas.width, liveCanvas.height);
+        let liveResultsHtml = '';
+
+        const scaleX = liveVideo.clientWidth / data.results.image_width;
+        const scaleY = liveVideo.clientHeight / data.results.image_height;
+
+        if (data.matched_profiles.length > 0) {
+            data.matched_profiles.forEach(profile => {
+                liveResultsHtml += `
+                    <div class="card p-3 mb-2 space-y-3">
+                        <p class="font-bold text-lg text-glow-cyan">${profile.name}</p>
+                        <a href="/case/${profile.id}" class="text-xs hover:underline">View Profile &rarr;</a>
+                        <button class="btn-primary w-full text-sm notify-btn" data-case-id="${profile.id}" data-snapshot='${data.image_data}'>
+                            Notify Case Owner
+                        </button>
+                    </div>
+                `;
+            });
+        }
+
+        if (data.results.match_results.length > 0) {
+            data.results.match_results.forEach(res => {
+                const loc = res.location;
+                ctx.strokeStyle = res.name === "Unknown" ? "#FFCC00" : "#00E5FF";
+                ctx.lineWidth = 3;
+                ctx.strokeRect(loc.left * scaleX, loc.top * scaleY, (loc.right - loc.left) * scaleX, (loc.bottom - loc.top) * scaleY);
+            });
+        }
+
+        if (!liveResultsHtml) {
+            liveResultsHtml = '<p class="text-slate-400">Analyzing for known faces...</p>';
+        }
+        liveResults.innerHTML = liveResultsHtml;
+    }
+
+    // --- Global Event Listener for all "Notify Owner" buttons ---
+    mainContainer.addEventListener('click', (e) => {
+        if (e.target.classList.contains('notify-btn')) {
+            const button = e.target;
+            const caseId = button.dataset.caseId;
+            const snapshotData = button.dataset.snapshot;
+            if (!caseId || !snapshotData) {
+                showAlert('Could not send notification. Data missing.', false);
+                return;
+            }
+            sendNotification(caseId, currentLocation, snapshotData);
+            button.innerText = 'Sent!';
+            button.disabled = true;
+        }
+    });
+
+    // --- Function to manually send notification ---
+    async function sendNotification(caseId, locationDetails, snapshotData) {
+        try {
+            const response = await fetch('/api/notify_owner', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    case_id: caseId,
+                    location_details: locationDetails,
+                    snapshot_data: snapshotData
+                }),
+            });
+            const result = await response.json();
+            showAlert(result.message, result.success);
+        } catch (error) {
+            showAlert('Failed to send notification.', false);
+        }
+    }
+</script>
+{% endblock %}

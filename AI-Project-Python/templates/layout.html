@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}FaceTrace AI{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        :root {
+            --bg-dark: #000000;
+            --glow-cyan: #00e5ff;
+            --text-primary: #e0eafc;
+            --text-secondary: #a0b3d1;
+            --border-color: rgba(0, 229, 255, 0.2);
+        }
+        body {
+            background-color: var(--bg-dark);
+            /* New Dot Matrix Background */
+            background-image: radial-gradient(rgba(0, 41, 82, 0.5) 1px, transparent 1px);
+            background-size: 16px 16px;
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            overflow: hidden; /* Prevent scrollbars from the pseudo-element */
+        }
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, rgba(0, 120, 255, 0.2), transparent 60%);
+            z-index: -1;
+            animation: pulse-glow 10s infinite alternate;
+        }
+
+        @keyframes pulse-glow {
+            from {
+                opacity: 0.5;
+                transform: scale(1);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1.2);
+            }
+        }
+
+        .font-orbitron { font-family: 'Orbitron', sans-serif; }
+
+        /* Glowing Glass Card Style */
+        .card {
+            background: rgba(10, 15, 26, 0.5);
+            backdrop-filter: blur(12px) saturate(150%);
+            -webkit-backdrop-filter: blur(12px) saturate(150%);
+            border: 1px solid var(--border-color);
+            border-radius: 1rem;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .card:hover {
+            border-color: rgba(0, 229, 255, 0.8);
+            box-shadow: 0 0 25px rgba(0, 229, 255, 0.4), inset 0 0 10px rgba(0, 229, 255, 0.2);
+            transform: translateY(-5px);
+        }
+
+        /* Form & Button Styles */
+        .form-input {
+            background-color: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            width: 100%;
+            transition: all 0.2s ease;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: var(--glow-cyan);
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.5);
+        }
+        .btn-primary {
+            background: var(--glow-cyan);
+            color: #000;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem; font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 229, 255, 0.3);
+        }
+        .btn-primary:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 25px rgba(0, 229, 255, 0.5);
+        }
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem; font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-secondary:hover {
+            background: var(--border-color);
+            color: white;
+        }
+
+        /* Main container for layout */
+        .main-content-area {
+            width: 100%;
+            max-width: 1200px;
+            padding: 2rem;
+        }
+        /* --- Find this block in your code --- */
+body {
+    background-color: var(--bg-dark);
+    /* New Dot Matrix Background */
+    background-image: radial-gradient(rgba(0, 41, 82, 0.5) 1px, transparent 1px);
+    background-size: 16px 16px;
+    color: var(--text-primary);
+    font-family: 'Inter', sans-serif;
+    overflow: auto; /* <-- CHANGE THIS LINE from 'hidden' to 'auto' */
+}
+    </style>
+</head>
+<body class="flex justify-center p-4">
+    <div class="main-content-area space-y-8">
+        <header class="flex justify-between items-center">
+             <div>
+                <a href="{{ url_for('main_menu') }}"><h1 class="text-3xl font-bold font-orbitron text-white">FaceTrace AI</h1></a>
+                <p class="text-sm text-slate-400">Networked Intelligence for Missing Persons</p>
+            </div>
+            <div class="text-sm flex items-center space-x-6">
+                {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('manage_cases') }}" class="text-slate-400 hover:text-white">Manage Cases</a>
+                    <span class="text-slate-500">|</span>
+                    <span class="text-slate-400">USER: <strong>{{ current_user.username }}</strong></span>
+                    <a href="{{ url_for('logout') }}" class="text-slate-400 hover:text-white">LOGOUT</a>
+                {% else %}
+                    <a href="{{ url_for('login') }}" class="btn-secondary">Login</a>
+                    <a href="{{ url_for('register') }}" class="btn-primary">Register</a>
+                {% endif %}
+            </div>
+        </header>
+
+        <main>
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <script>
+        function showAlert(message, isSuccess = true) {
+            const alertDiv = document.createElement('div');
+            alertDiv.textContent = message;
+            alertDiv.style.position = 'fixed';
+            alertDiv.style.top = '20px';
+            alertDiv.style.right = '20px';
+            alertDiv.style.padding = '1rem 1.5rem';
+            alertDiv.style.borderRadius = '0.75rem';
+            alertDiv.style.color = '#ffffff';
+            alertDiv.style.zIndex = '1000';
+            alertDiv.style.border = `1px solid ${isSuccess ? 'rgba(0, 229, 255, 0.5)' : 'rgba(255, 77, 77, 0.5)'}`;
+            alertDiv.style.background = isSuccess ? 'rgba(0, 229, 255, 0.1)' : 'rgba(255, 77, 77, 0.1)';
+            alertDiv.style.backdropFilter = 'blur(10px)';
+            document.body.appendChild(alertDiv);
+            setTimeout(() => {
+                alertDiv.style.opacity = '0';
+                alertDiv.style.transition = 'opacity 0.5s ease';
+                setTimeout(() => alertDiv.remove(), 500);
+            }, 3000);
+        }
+    </script>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
+

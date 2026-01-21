@@ -1,0 +1,20 @@
+{% extends "layout.html" %}
+{% block title %}Confirm Match{% endblock %}
+{% block content %}
+<div class="text-center space-y-6 max-w-lg mx-auto">
+    <h1 class="text-3xl">Sighting Confirmed</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                 <p class="text-lg">{{ message }}</p>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <p class="text-gray-400">The case status has been updated to "Found" and the original reporter has been notified. Thank you for helping to keep the community safe.</p>
+    <div>
+        <a href="{{ url_for('main_menu') }}" class="btn">Return to Dashboard</a>
+    </div>
+</div>
+{% endblock %}

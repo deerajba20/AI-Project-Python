@@ -1,0 +1,26 @@
+{% extends "layout.html" %}
+{% block title %}Verify OTP{% endblock %}
+{% block content %}
+<div class="max-w-md mx-auto text-center">
+    <h2 class="text-3xl mb-4">Enter Your OTP</h2>
+    <p class="mb-6">A 6-digit One-Time Password was sent to your email. It will expire in 10 minutes.</p>
+
+    <form method="POST" action="{{ url_for('verify_otp') }}" class="space-y-4">
+        <div>
+            <label for="otp" class="sr-only">OTP</label>
+            <input type="text" name="otp" id="otp" required maxlength="6" pattern="\d{6}" title="Enter a 6-digit number" placeholder="******" class="form-input w-full text-center tracking-[1rem]">
+        </div>
+        <div>
+            <button type="submit" class="btn w-full">
+                Verify OTP
+            </button>
+        </div>
+    </form>
+    <p class="mt-6 text-center text-sm">
+        Didn't receive it?
+        <a href="{{ url_for('forgot_password') }}" class="font-medium hover:underline">
+            Request a new one
+        </a>
+    </p>
+</div>
+{% endblock %}

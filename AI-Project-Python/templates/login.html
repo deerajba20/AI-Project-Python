@@ -1,0 +1,47 @@
+{% extends "layout.html" %}
+{% block title %}Login{% endblock %}
+{% block content %}
+<div class="max-w-md mx-auto">
+    <h2 class="text-3xl text-center mb-6">Access Network</h2>
+
+    <!-- Google Login Button -->
+    <a href="{{ url_for('google_login') }}" class="w-full flex justify-center items-center py-3 px-4 rounded-lg transition-all duration-300 ease-in-out" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white;">
+        <img class="w-5 h-5 mr-3" src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google logo">
+        Sign in with Google
+    </a>
+
+    <div class="my-6 flex items-center">
+        <div class="flex-grow border-t" style="border-color: var(--border-color);"></div>
+        <span class="flex-shrink mx-4 text-xs uppercase">Or Continue With</span>
+        <div class="flex-grow border-t" style="border-color: var(--border-color);"></div>
+    </div>
+
+    <!-- Standard Login Form -->
+    <form method="POST" action="{{ url_for('login') }}{% if request.args.next %}?next={{ request.args.next }}{% endif %}" class="space-y-4">
+        <div>
+            <label for="username" class="sr-only">Username</label>
+            <input type="text" name="username" id="username" required placeholder="Username" class="form-input w-full">
+        </div>
+        <div>
+            <label for="password" class="sr-only">Password</label>
+            <input type="password" name="password" id="password" required placeholder="Password" class="form-input w-full">
+        </div>
+        <div class="text-sm text-right">
+            <a href="{{ url_for('forgot_password') }}" class="font-medium hover:underline">
+                Forgot password?
+            </a>
+        </div>
+        <div>
+            <button type="submit" class="btn w-full">
+                Sign In
+            </button>
+        </div>
+    </form>
+    <p class="mt-6 text-center text-sm">
+        Don't have an account?
+        <a href="{{ url_for('register') }}" class="font-medium hover:underline">
+            Register here
+        </a>
+    </p>
+</div>
+{% endblock %}

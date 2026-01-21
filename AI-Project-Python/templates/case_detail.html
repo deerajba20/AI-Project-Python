@@ -1,0 +1,144 @@
+{% extends "layout.html" %}
+{% block title %}Case Details{% endblock %}
+{% block content %}
+<div class="space-y-8">
+    <div>
+        <a href="{{ url_for('main_menu') }}" class="text-sm text-slate-400 hover:text-white">&larr; Back to Dashboard</a>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <!-- Left Column -->
+        <div class="md:col-span-1 space-y-4">
+            <div class="card overflow-hidden">
+                <img src="{{ case.photoURL }}" alt="{{ case.name }}" class="w-full">
+            </div>
+            <div class="space-y-2">
+                 <a href="{{ url_for('print_poster', case_id=case.id) }}" target="_blank" class="btn-secondary w-full text-center block">View/Download Poster</a>
+                 <button onclick="shareCase()" class="btn-secondary w-full">Share Case</button>
+            </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="md:col-span-2 space-y-8">
+            <div class="card p-6">
+                <h1 class="text-4xl font-bold font-orbitron mb-4">{{ case.name }}</h1>
+                <div class="space-y-2 text-slate-300">
+                    <p><strong>Status:</strong> <span class="font-semibold {{ 'text-red-400' if case.status == 'active' else 'text-green-400' }}">{{ case.status|capitalize }}</span></p>
+                    <p><strong>Age:</strong> {{ case.age }}</p>
+                    <p><strong>Gender:</strong> {{ case.gender }}</p>
+                    <p><strong>Missing Since:</strong> {{ case.missingSince }}</p>
+                    <p><strong>Last Seen At:</strong> {{ case.lastSeen }}</p>
+                    <p><strong>Distinguishing Features:</strong> {{ case.distinguishingFeatures }}</p>
+                    {% if case.cashReward and case.cashReward > 0 %}
+                    <p><strong>Cash Reward:</strong> <span class="font-bold text-green-400">₹{{ "{:,.0f}".format(case.cashReward) }}</span></p>
+                    {% endif %}
+                    <div class="pt-4">
+                        <p><strong>Emergency Contact:</strong></p>
+                        <a href="tel:{{ case.contact }}" class="inline-block bg-green-500 text-white px-4 py-2 rounded-md font-semibold hover:bg-green-600">
+                            {{ case.contact }}
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Report Sighting -->
+            <div class="card p-6">
+                <h2 class="text-xl font-semibold mb-4 font-orbitron">Report a Sighting (Anonymous)</h2>
+                <form id="sightingForm" class="space-y-4">
+                    <textarea id="sightingMessage" placeholder="Details of the sighting..." required class="form-input"></textarea>
+                    <input type="text" id="sightingLocation" placeholder="Location of sighting" required class="form-input">
+                    <button type="submit" class="btn-primary w-full">Submit Report</button>
+                </form>
+            </div>
+
+            <!-- Sightings Log -->
+            <div class="card p-6">
+                 <h2 class="text-xl font-semibold mb-4 font-orbitron">Community Sightings Log</h2>
+                 <div id="sightingsList" class="space-y-3">
+                    {% if sightings %}
+                        {% for sighting in sightings %}
+                            <div class="bg-slate-800/50 p-3 rounded-lg">
+                                <p class="font-semibold">{{ sighting.message }}</p>
+                                <p class="text-sm text-slate-400">Location: {{ sighting.location }}</p>
+                                <p class="text-xs text-slate-500">Reported on: {{ sighting.timestamp.split('T')[0] }} by {{sighting.reportedBy}}</p>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-slate-400">No sightings reported yet.</p>
+                    {% endif %}
+                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+document.getElementById('sightingForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const message = document.getElementById('sightingMessage').value;
+    const location = document.getElementById('sightingLocation').value;
+
+    try {
+        const response = await fetch(`/api/add_sighting/{{ case.id }}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message, location })
+        });
+        const result = await response.json();
+        if (response.ok) {
+            showAlert(result.message, true);
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            showAlert(result.message, false);
+        }
+    } catch (error) {
+        showAlert('An error occurred.', false);
+    }
+});
+
+async function shareCase() {
+    showAlert('Generating poster... please wait.', true);
+    const iframe = document.createElement('iframe');
+    iframe.src = `{{ url_for('print_poster', case_id=case.id) }}`;
+    iframe.style.position = 'absolute';
+    iframe.style.left = '-9999px';
+    document.body.appendChild(iframe);
+
+    iframe.onload = () => {
+        setTimeout(() => {
+            const posterElement = iframe.contentWindow.document.getElementById('poster');
+            if (!posterElement) {
+                showAlert('Error generating poster.', false);
+                document.body.removeChild(iframe);
+                return;
+            }
+            html2canvas(posterElement, { scale: 2, useCORS: true }).then(canvas => {
+                canvas.toBlob(async (blob) => {
+                    const file = new File([blob], "missing-poster.png", { type: "image/png" });
+                    const shareData = {
+                        files: [file],
+                        title: 'Missing Person Alert: {{ case.name }}',
+                        text: `Help find {{ case.name }}! Last seen at {{ case.lastSeen }}. See poster for details.`
+                    };
+                    if (navigator.canShare && navigator.canShare(shareData)) {
+                        try {
+                            await navigator.share(shareData);
+                        } catch (err) { console.error("Share failed:", err); }
+                    } else {
+                        showAlert('Web Share not supported. Downloading poster instead.', false);
+                        const link = document.createElement('a');
+                        link.href = URL.createObjectURL(blob);
+                        link.download = 'missing-poster.png';
+                        link.click();
+                    }
+                    document.body.removeChild(iframe);
+                }, 'image/png');
+            });
+        }, 1000);
+    };
+}
+</script>
+{% endblock %}
+

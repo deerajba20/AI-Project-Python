@@ -1,0 +1,50 @@
+{% extends "layout.html" %}
+{% block title %}Register{% endblock %}
+{% block content %}
+<div class="max-w-md mx-auto">
+    <h2 class="text-3xl text-center mb-6">Create Network ID</h2>
+
+    <form id="registerForm" method="POST" action="{{ url_for('register') }}" class="space-y-4">
+        <div>
+            <label for="username" class="sr-only">Username</label>
+            <input type="text" name="username" id="username" required placeholder="Username" class="form-input w-full">
+        </div>
+        <div>
+            <label for="email" class="sr-only">Email Address</label>
+            <input type="email" name="email" id="email" required placeholder="Email Address" class="form-input w-full">
+        </div>
+        <div>
+            <label for="password" class="sr-only">Password</label>
+            <input type="password" name="password" id="password" required placeholder="Password" class="form-input w-full">
+        </div>
+        <div>
+             <label for="confirm_password" class="sr-only">Confirm Password</label>
+             <input type="password" name="confirm_password" id="confirm_password" required placeholder="Confirm Password" class="form-input w-full">
+        </div>
+        <div>
+            <button type="submit" class="btn w-full">
+                Register
+            </button>
+        </div>
+    </form>
+     <p class="mt-6 text-center text-sm">
+        Already have an account?
+        <a href="{{ url_for('login') }}" class="font-medium hover:underline">
+            Login here
+        </a>
+    </p>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+    document.getElementById('registerForm').addEventListener('submit', function(event) {
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirm_password').value;
+
+        if (password !== confirmPassword) {
+            event.preventDefault();
+            showAlert('Passwords do not match. Please try again.', false);
+        }
+    });
+</script>
+{% endblock %}

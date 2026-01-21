@@ -1,0 +1,312 @@
+{% extends "layout.html" %}
+{% block title %}Manage Cases{% endblock %}
+{% block content %}
+<main class="space-y-6">
+    <div class="flex justify-between items-center">
+        <div>
+            <a href="{{ url_for('main_menu') }}" class="text-sm text-slate-400 hover:text-white">&larr; Back to Dashboard</a>
+            <h1 class="text-3xl font-bold font-orbitron mt-1">Manage My Cases</h1>
+        </div>
+        <button onclick="openAddModal()" class="btn-primary flex items-center space-x-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+            <span>Add New Case</span>
+        </button>
+    </div>
+
+    <div class="card overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-800">
+                <thead class="bg-slate-800/50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Photo</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Name</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Days Missing</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-slate-400 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800">
+                    {% for case in cases %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap"><img src="{{ case.photoURL }}" alt="{{ case.name }}" class="w-12 h-12 rounded-full object-cover"></td>
+                        <td class="px-6 py-4 whitespace-nowrap font-medium">{{ case.name }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ 'bg-red-900/50 text-red-300' if case.status == 'active' else 'bg-green-900/50 text-green-300' }}">
+                                {{ case.status|capitalize }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-400">{{ case.days_missing if case.status == 'active' else 'N/A' }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-4">
+                            <button onclick="openEditModal('{{ case.id }}')" class="text-slate-400 hover:text-white">Edit</button>
+                            <button onclick="confirmDelete('{{ case.id }}')" class="text-red-500 hover:text-red-400">Delete</button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center py-10 text-slate-400">You have not reported any cases yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+<!-- Base Modal Macro -->
+{% macro modal(id, title) %}
+<div id="{{ id }}" class="fixed z-10 inset-0 overflow-y-auto hidden">
+    <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-black/70 backdrop-blur-sm" aria-hidden="true"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+        <div class="inline-block align-bottom card text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full">
+            <form id="{{ id }}Form" onsubmit="return false;">
+                <div class="p-6">
+                    <h3 class="text-xl font-semibold mb-6 font-orbitron">{{ title }}</h3>
+                    {{ caller() }}
+                </div>
+                <div class="bg-slate-800/50 px-6 py-4 sm:flex sm:flex-row-reverse">
+                    <button id="{{ id }}SubmitBtn" type="submit" class="btn-primary w-full sm:ml-3 sm:w-auto">Submit</button>
+                    <button type="button" onclick="closeModal('{{ id }}')" class="btn-secondary w-full mt-3 sm:mt-0 sm:w-auto">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+<!-- Add Case Modal -->
+{% call modal('addCaseModal', 'Add New Case') %}
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div>
+        <label class="block text-sm font-medium text-slate-400 mb-1">Photo</label>
+        <div id="addUploadPrompt">
+            <label for="addPhoto" class="cursor-pointer border-2 border-dashed border-slate-700 rounded-lg p-6 text-center block hover:bg-slate-800/50 h-full flex flex-col justify-center">
+                 <svg class="w-10 h-10 mx-auto text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                <p class="mt-2 text-sm">Click to upload image</p>
+                <p class="text-xs text-slate-500">A clear face must be visible</p>
+            </label>
+            <input type="file" id="addPhoto" accept="image/*" class="hidden"/>
+        </div>
+        <div id="addUploadPreview" class="hidden relative">
+            <img id="addPreviewImage" src="#" alt="Preview" class="w-full h-64 object-cover rounded-lg">
+            <div id="addUploadLoading" class="absolute inset-0 bg-slate-900/80 flex flex-col items-center justify-center rounded-lg">
+                 <svg class="animate-spin h-8 w-8 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                <p class="mt-2 text-sm">Analyzing face...</p>
+            </div>
+            <button type="button" onclick="resetImageUpload('add')" class="absolute top-2 right-2 text-sm bg-black/50 rounded-full px-2 py-1 hover:bg-black">Change</button>
+        </div>
+        <input type="hidden" id="addPhotoURL" name="photoURL">
+        <input type="hidden" id="addDescriptor" name="descriptor">
+    </div>
+    <div class="space-y-4">
+        <input type="text" name="name" required class="form-input" placeholder="Full Name">
+        <div class="grid grid-cols-2 gap-4">
+            <input type="number" name="age" required class="form-input" placeholder="Age">
+            <select name="gender" class="form-input"><option>Male</option><option>Female</option><option>Other</option></select>
+        </div>
+        <input type="text" name="lastSeen" required class="form-input" placeholder="Last Seen Location">
+        <input type="text" name="contact" required class="form-input" placeholder="Emergency Contact">
+        <div>
+            <label class="block text-sm font-medium text-slate-400 mb-1">Missing Since</label>
+            <input type="date" name="missingSince" required class="form-input">
+        </div>
+        <textarea name="distinguishingFeatures" required class="form-input" placeholder="Distinguishing Features"></textarea>
+        <input type="number" name="cashReward" placeholder="Cash Reward (Optional)" class="form-input">
+    </div>
+</div>
+{% endcall %}
+
+<!-- Edit Case Modal -->
+{% call modal('editCaseModal', 'Edit Case') %}
+<input type="hidden" id="editCaseId" name="caseId">
+<p class="text-sm text-slate-500 mb-4">Note: The photo cannot be changed. To update the photo, please report a new case.</p>
+<div class="space-y-4">
+    <input type="text" id="editName" name="name" required class="form-input" placeholder="Full Name">
+    <div class="grid grid-cols-2 gap-4">
+        <input type="number" id="editAge" name="age" required class="form-input" placeholder="Age">
+        <select id="editGender" name="gender" class="form-input"><option>Male</option><option>Female</option><option>Other</option></select>
+    </div>
+    <input type="text" id="editLastSeen" name="lastSeen" required class="form-input" placeholder="Last Seen Location">
+    <input type="text" id="editContact" name="contact" required class="form-input" placeholder="Emergency Contact">
+    <div>
+        <label class="block text-sm font-medium text-slate-400 mb-1">Missing Since</label>
+        <input type="date" id="editMissingSince" name="missingSince" required class="form-input">
+    </div>
+    <textarea id="editDistinguishingFeatures" name="distinguishingFeatures" required class="form-input" placeholder="Distinguishing Features"></textarea>
+    <input type="number" id="editCashReward" name="cashReward" placeholder="Cash Reward (Optional)" class="form-input">
+</div>
+{% endcall %}
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteConfirmModal" class="fixed z-20 inset-0 overflow-y-auto hidden">
+    <div class="flex items-center justify-center min-h-screen">
+        <div class="fixed inset-0 bg-black/70 backdrop-blur-sm"></div>
+        <div class="card relative max-w-sm w-full">
+            <div class="p-6 text-center">
+                <svg class="mx-auto h-12 w-12 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                <h3 class="mt-2 text-lg font-medium">Delete Case</h3>
+                <p class="mt-2 text-sm text-slate-400">Are you sure? This action is irreversible.</p>
+            </div>
+            <div class="bg-slate-800/50 p-4 flex justify-end space-x-2">
+                <button type="button" onclick="closeModal('deleteConfirmModal')" class="btn-secondary">Cancel</button>
+                <button id="confirmDeleteBtn" type="button" class="bg-red-600 text-white px-4 py-2 rounded-md font-semibold hover:bg-red-700">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+let caseToDeleteId = null;
+
+// Modal Handling
+function closeModal(modalId) { document.getElementById(modalId).classList.add('hidden'); }
+function openAddModal() {
+    const form = document.getElementById('addCaseModalForm');
+    form.reset();
+    resetImageUpload('add');
+    document.getElementById('addCaseModalSubmitBtn').disabled = true;
+    document.getElementById('addCaseModal').classList.remove('hidden');
+}
+
+// Image Upload
+document.getElementById('addPhoto').addEventListener('change', (e) => handlePhotoUpload(e, 'add'));
+
+async function handlePhotoUpload(event, type) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const previewContainer = document.getElementById(`${type}UploadPreview`);
+    const loading = document.getElementById(`${type}UploadLoading`);
+    const submitBtn = document.getElementById(`addCaseModalSubmitBtn`);
+
+    document.getElementById(`${type}UploadPrompt`).classList.add('hidden');
+    previewContainer.classList.remove('hidden');
+    document.getElementById(`${type}PreviewImage`).src = URL.createObjectURL(file);
+    loading.classList.remove('hidden');
+    submitBtn.disabled = true;
+
+    const formData = new FormData();
+    formData.append('photo', file);
+
+    try {
+        const response = await fetch('/api/process_photo', { method: 'POST', body: formData });
+        const result = await response.json();
+        loading.classList.add('hidden');
+        if (response.ok) {
+            document.getElementById(`${type}PhotoURL`).value = result.photoURL;
+            document.getElementById(`${type}Descriptor`).value = JSON.stringify(result.descriptor);
+            submitBtn.disabled = false;
+        } else {
+            showAlert(result.message, false);
+            resetImageUpload(type);
+        }
+    } catch (error) {
+        showAlert('Error during upload.', false);
+        resetImageUpload(type);
+    }
+}
+
+function resetImageUpload(type) {
+    document.getElementById(`${type}UploadPrompt`).classList.remove('hidden');
+    document.getElementById(`${type}UploadPreview`).classList.add('hidden');
+    document.getElementById(`${type}Photo`).value = '';
+}
+
+// Form Submissions
+document.getElementById('addCaseModalForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const submitBtn = document.getElementById('addCaseModalSubmitBtn');
+    submitBtn.textContent = 'Adding...';
+    submitBtn.disabled = true;
+    try {
+        const response = await fetch('/api/add_case', { method: 'POST', body: new FormData(this) });
+        const result = await response.json();
+        if (response.ok) {
+            showAlert(result.message, true);
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            showAlert(result.message, false);
+            submitBtn.textContent = 'Submit';
+            submitBtn.disabled = false;
+        }
+    } catch (error) {
+        showAlert('An error occurred.', false);
+        submitBtn.textContent = 'Submit';
+        submitBtn.disabled = false;
+    }
+});
+
+document.getElementById('editCaseModalForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const caseId = document.getElementById('editCaseId').value;
+    const submitBtn = document.getElementById('editCaseModalSubmitBtn');
+    submitBtn.textContent = 'Saving...';
+    submitBtn.disabled = true;
+    try {
+        const response = await fetch(`/api/update_case/${caseId}`, { method: 'POST', body: new FormData(this) });
+        const result = await response.json();
+        if (response.ok) {
+            showAlert(result.message, true);
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            showAlert(result.message, false);
+            submitBtn.textContent = 'Submit';
+            submitBtn.disabled = false;
+        }
+    } catch (error) {
+        showAlert('An error occurred.', false);
+        submitBtn.textContent = 'Submit';
+        submitBtn.disabled = false;
+    }
+});
+
+
+// Edit and Delete Logic
+async function openEditModal(caseId) {
+    try {
+        const response = await fetch(`/api/get_case/${caseId}`);
+        const caseData = await response.json();
+        if (!response.ok) throw new Error(caseData.message);
+
+        const form = document.getElementById('editCaseModalForm');
+        form.reset();
+
+        form.querySelector('#editCaseId').value = caseId;
+        form.querySelector('#editName').value = caseData.name;
+        form.querySelector('#editAge').value = caseData.age;
+        form.querySelector('#editGender').value = caseData.gender;
+        form.querySelector('#editLastSeen').value = caseData.lastSeen;
+        form.querySelector('#editContact').value = caseData.contact;
+        form.querySelector('#editMissingSince').value = caseData.missingSince;
+        form.querySelector('#editDistinguishingFeatures').value = caseData.distinguishingFeatures;
+        form.querySelector('#editCashReward').value = caseData.cashReward || '';
+
+        document.getElementById('editCaseModal').classList.remove('hidden');
+    } catch (error) {
+        showAlert(error.message || 'Could not load case data.', false);
+    }
+}
+
+function confirmDelete(caseId) {
+    caseToDeleteId = caseId;
+    document.getElementById('deleteConfirmModal').classList.remove('hidden');
+}
+
+document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
+    if (!caseToDeleteId) return;
+    try {
+        const response = await fetch(`/api/delete_case/${caseToDeleteId}`, { method: 'POST' });
+        const result = await response.json();
+        showAlert(result.message, response.ok);
+        if (response.ok) setTimeout(() => window.location.reload(), 1000);
+    } catch (error) {
+        showAlert('An error occurred.', false);
+    } finally {
+        closeModal('deleteConfirmModal');
+        caseToDeleteId = null;
+    }
+});
+</script>
+{% endblock %}
+

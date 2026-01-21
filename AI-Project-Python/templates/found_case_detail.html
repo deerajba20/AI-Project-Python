@@ -1,0 +1,36 @@
+{% extends "layout.html" %}
+{% block title %}Found Case Details{% endblock %}
+{% block content %}
+<div class="space-y-6">
+    <a href="{{ url_for('main_menu') }}" class="text-sm hover:underline">&larr; Back to Dashboard</a>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="lg:col-span-1">
+            <img src="{{ case.photoURL }}" alt="{{ case.name }}" class="w-full rounded-lg shadow-lg border-2" style="border-color: var(--border-color);">
+        </div>
+
+        <div class="lg:col-span-2 space-y-6">
+            <h1 class="text-4xl font-bold">{{ case.name }}</h1>
+
+            <div class="info-section p-6" style="border-left: 4px solid var(--primary-glow-color);">
+                <p><strong>Status:</strong> <span class="font-semibold text-green-400">Found</span></p>
+                <p><strong>Found On:</strong> {{ case.foundDate.split('T')[0] }}</p>
+                <p><strong>Age:</strong> {{ case.age }}</p>
+            </div>
+
+            <div class="info-section p-6 text-center" style="border-left: 4px solid #f0ad4e;">
+                <p class="font-semibold" style="color: #f0ad4e;">Privacy Notice</p>
+                <p class="text-sm">This record will be automatically deleted on: <br> <strong class="text-lg">{{ case.deletion_date_str }}</strong></p>
+            </div>
+
+            {% if case.foundLocation %}
+            <div class="info-section p-6">
+                <h2 class="text-xl font-semibold mb-3">Location of Confirmed Sighting</h2>
+                <p><strong>Address:</strong> {{ case.foundLocation.address }}</p>
+                <p class="mt-4 text-xs text-gray-500">A private link to the exact map location has been sent to the case owner's registered email address for further action.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

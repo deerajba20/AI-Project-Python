@@ -1,0 +1,12 @@
+Flask
+Flask-Login
+Flask-Mail
+pymongo[srv]
+werkzeug
+face_recognition
+numpy
+Pillow
+gunicorn
+itsdangerous
+Authlib
+gunicorn

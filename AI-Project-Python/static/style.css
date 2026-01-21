@@ -1,0 +1,31 @@
+body {
+    font-family: 'Inter', sans-serif;
+}
+
+.case-card-found-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(22, 163, 74, 0.7);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+    pointer-events: none; /* Allows clicking through the overlay if needed */
+}
+
+.relative:hover .case-card-found-overlay {
+    opacity: 1;
+}
+
+/* This makes the overlay permanently visible for found cases */
+.found-case .case-card-found-overlay {
+    opacity: 1;
+}
