@@ -31,24 +31,24 @@ app.config['SECRET_KEY'] = 'a_super_secret_string_that_is_long_and_random'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=15)
 
 # Google OAuth Configuration
-app.config['GOOGLE_CLIENT_ID'] = '393712926688-gus1222o4de1vss07ebdjrknlh533f53.apps.googleusercontent.com'
-app.config['GOOGLE_CLIENT_SECRET'] = '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'
+app.config['add yours google client'] = '393712926688-gus1222o4de1vss07ebdjrknlh533f53.apps.googleusercontent.com'
+app.config['secret code'] = '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'
 
 # Email Configuration
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'missingpersonfinder6@gmail.com'
-app.config['MAIL_PASSWORD'] = 'rgtz sqnf plls jsur'  # IMPORTANT: Use a 16-digit Google App Password here
-app.config['MAIL_DEFAULT_SENDER'] = ("FaceTrace AI", "missingpersonfinder6@gmail.com")
+app.config['username'] = 'missingpersonfinder6@gmail.com'
+app.config['password'] = 'rgtz sqnf plls jsur'  # IMPORTANT: Use a 16-digit Google App Password here
+app.config['MAil id'] = ("FaceTrace AI", "missingpersonfinder6@gmail.com")
 
 mail = Mail(app)
 oauth = OAuth(app)
 s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 
 # --- MongoDB Connection ---
-DB_USERNAME = 'datamaker'
-DB_PASSWORD = 'man@123'
+DB_USERNAME = 'database name'
+DB_PASSWORD = 'database password'
 DB_CLUSTER_URL = "cluster0.fe3yf6z.mongodb.net"
 DB_NAME = "lost_and_found_db"
 
